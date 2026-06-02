@@ -21,7 +21,7 @@ Pick a folder where you keep your repos.
 
 ```bash
 mkdir -p ~/projects && cd ~/projects
-git clone https://github.com/<chris-user>/document-ingestion-pipeline.git
+git clone https://github.com/Chrisissorry/document-ingestion-pipeline.git
 cd document-ingestion-pipeline
 ```
 
@@ -29,7 +29,7 @@ cd document-ingestion-pipeline
 
 ```powershell
 mkdir $env:USERPROFILE\projects -Force; cd $env:USERPROFILE\projects
-git clone https://github.com/<chris-user>/document-ingestion-pipeline.git
+git clone https://github.com/Chrisissorry/document-ingestion-pipeline.git
 cd document-ingestion-pipeline
 ```
 

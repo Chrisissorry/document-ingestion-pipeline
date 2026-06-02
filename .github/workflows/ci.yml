@@ -1,0 +1,29 @@
+name: CI
+
+# Runs on pull requests into main only, not on every push. Keep main green:
+# a PR must pass before it can be merged.
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Sync dependencies
+        run: uv sync
+
+      - name: Pipeline smoke test
+        # No API token needed: the stub extractors do not call the model.
+        run: uv run python -m ingest samples/sample_invoice.pdf
+
+      # TODO (Test Data and Eval cluster): add lint and tests as they land, e.g.
+      #   - run: uv run ruff check .
+      #   - run: uv run pytest
