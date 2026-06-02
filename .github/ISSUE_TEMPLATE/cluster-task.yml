@@ -92,6 +92,6 @@ body:
       options:
         - label: CI is green on the pull request
         - label: PR links the issue with "Closes #<n>" and is squash-merged
-        - label: Default model stays claude-haiku-4-5 unless justified
+        - label: Pipeline runtime model stays claude-haiku-4-5 unless justified
     validations:
       required: false

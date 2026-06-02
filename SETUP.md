@@ -55,7 +55,21 @@ claude --version
 
 ## 3. Configure the IU token
 
-In Session 6 you get the API key. It is needed in two places: by the container (via `.env`) and by Claude Code on the host (via shell environment).
+In Session 6 you get the API key from Chris. It is needed in two places: by the container (via `.env`) and by Claude Code on the host (via shell environment).
+
+The endpoint is Microsoft Foundry's Anthropic-compatible passthrough. Three models are available:
+
+| Model | When to use |
+|---|---|
+| `claude-sonnet-4-6` | **Default for Claude Code (development).** Best price/performance for coding. |
+| `claude-haiku-4-5` | **Default for the pipeline (agent runtime in `.env`).** Cheap, fast — right for bulk document calls. Also good for tight Claude Code loops. |
+| `claude-opus-4-8` | Highest capability. Use only when Sonnet is stuck. |
+
+So the split: Claude Code (development on the host) runs on Sonnet, the container (pipeline runtime) runs on Haiku. This is deliberate. The repo ships `.claude/settings.json`, which points Claude Code at the IU endpoint and pins the model IDs (Sonnet as the default), so on the host you only provide the token. The container reads its endpoint and Haiku model from `.env`.
+
+**Why Claude Code may still ask for a login method:** Claude Code authenticates from your shell environment (plus the shipped `.claude/settings.json`). It does not read the project `.env`, that file only feeds the Docker container. So filling in `.env` alone is not enough for Claude Code on the host. When `ANTHROPIC_AUTH_TOKEN` is present in the shell before you start `claude`, the bearer token is detected and the "Select login method" chooser is skipped. If it is missing, Claude Code falls back to that interactive prompt.
+
+Reference: [Claude Code on Microsoft Foundry](https://code.claude.com/docs/en/microsoft-foundry#3-configure-claude-code).
 
 ### 3a. `.env` for the container
 
@@ -83,7 +97,13 @@ Copy-Item .env.example .env
 read -s ANTHROPIC_AUTH_TOKEN && export ANTHROPIC_AUTH_TOKEN
 # paste token, press Enter
 export ANTHROPIC_BASE_URL="https://iu-digitalisierung-seminar.services.ai.azure.com/anthropic"
-export ANTHROPIC_MODEL="claude-haiku-4-5"
+```
+
+The model is not exported here: Claude Code picks up Sonnet from the committed
+`.claude/settings.json`. Confirm the token is visible in this shell before launching `claude`:
+
+```bash
+[ -n "$ANTHROPIC_AUTH_TOKEN" ] && echo "token set" || echo "TOKEN MISSING, claude will ask for a login method"
 ```
 
 For permanent use, store the token in the macOS Keychain instead of plain text:
@@ -99,10 +119,16 @@ export ANTHROPIC_AUTH_TOKEN="$(security find-generic-password -a "$USER" -s iu-a
 ```powershell
 $env:ANTHROPIC_AUTH_TOKEN = "<paste-token>"
 $env:ANTHROPIC_BASE_URL = "https://iu-digitalisierung-seminar.services.ai.azure.com/anthropic"
-$env:ANTHROPIC_MODEL = "claude-haiku-4-5"
 ```
 
-To persist across sessions, add the same three lines to your PowerShell profile (`notepad $PROFILE`).
+The model is not set here: Claude Code picks up Sonnet from the committed
+`.claude/settings.json`. Confirm the token is visible in this shell before launching `claude`:
+
+```powershell
+if ($env:ANTHROPIC_AUTH_TOKEN) { "token set" } else { "TOKEN MISSING, claude will ask for a login method" }
+```
+
+To persist across sessions, add the same two lines to your PowerShell profile (`notepad $PROFILE`).
 
 ## 4. Build the container
 
@@ -131,7 +157,7 @@ curl -X POST "$ANTHROPIC_BASE_URL/v1/messages" \
   -H "Authorization: Bearer $ANTHROPIC_AUTH_TOKEN" \
   -H "anthropic-version: 2023-06-01" \
   -d '{
-    "model": "claude-haiku-4-5",
+    "model": "claude-sonnet-4-6",
     "max_tokens": 200,
     "messages": [{"role": "user", "content": "Reply with one word: ping"}]
   }'
@@ -144,7 +170,7 @@ curl.exe -X POST "$env:ANTHROPIC_BASE_URL/v1/messages" `
   -H "Content-Type: application/json" `
   -H "Authorization: Bearer $env:ANTHROPIC_AUTH_TOKEN" `
   -H "anthropic-version: 2023-06-01" `
-  -d '{\"model\":\"claude-haiku-4-5\",\"max_tokens\":200,\"messages\":[{\"role\":\"user\",\"content\":\"Reply with one word: ping\"}]}'
+  -d '{\"model\":\"claude-sonnet-4-6\",\"max_tokens\":200,\"messages\":[{\"role\":\"user\",\"content\":\"Reply with one word: ping\"}]}'
 ```
 
 The response should contain `"content": [{"type": "text", "text": "pong"}]` or similar.
@@ -169,8 +195,10 @@ This starts Postgres (via `depends_on`), runs the pipeline inside the container,
 
 ## Troubleshooting
 
+- **Claude Code shows "Select login method":** the token is not in the shell you launched `claude` from. Claude Code reads the shell environment (and `.claude/settings.json`), not the project `.env`. Run the step 3b export in that same terminal, or persist it in your shell profile, then relaunch `claude`. Also make sure `claude --version` is recent.
 - **Docker Desktop not running:** start it before any `docker compose` command.
 - **Port 5432 already in use:** you have a local Postgres running. Stop it, or change the host port mapping in `docker-compose.yml` (e.g. `"5433:5432"`).
 - **Tesseract / OCR errors:** Tier 1.5 OCR is optional and not in the MVP path. Ignore OCR-related errors.
-- **Token quota reached:** we share the IU token. On `429`, wait briefly and stay on Haiku (no Sonnet, no Opus).
+- **Token quota reached:** we share the IU endpoint. On `429`, back off briefly and consider switching to a smaller model (`/model claude-haiku-4-5` inside Claude Code) before retrying.
+- **Wrong model name:** Foundry exposes Anthropic model IDs as-is. Valid values: `claude-sonnet-4-6`, `claude-haiku-4-5`, `claude-opus-4-8`. A 404 on the model usually means a typo.
 - **PDF not read:** make sure the PDF is in `samples/` and not password protected.

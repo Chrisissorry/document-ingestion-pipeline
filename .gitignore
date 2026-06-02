@@ -9,3 +9,6 @@ pgdata/
 # IDE
 .idea/
 .vscode/
+
+# Claude Code local overrides (personal, never committed)
+.claude/settings.local.json
