@@ -1,0 +1,97 @@
+name: Cluster task
+description: A unit of work for the pipeline, scoped to one cluster. One issue, one branch, one PR.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        One issue, one branch, one pull request. See [docs/branching.md](../blob/main/docs/branching.md).
+
+        Give this a short, action-oriented title, for example "Implement triage classifier".
+
+  - type: dropdown
+    id: cluster
+    attributes:
+      label: Cluster
+      description: Which part of the pipeline does this belong to?
+      options:
+        - Ingestion and I/O
+        - Triage and Routing
+        - Schemas
+        - Extractors
+        - Validation and Confidence
+        - Human-in-the-Loop
+        - Test Data and Eval
+        - "Bonus: OCR (Tier 1.5)"
+        - Other / cross-cutting
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+      description: One or two sentences. What value does this add, or what breaks without it?
+      placeholder: The router needs a document type to pick an extractor. Today everything is hardcoded to invoice.
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Concrete sub-tasks as a checklist.
+      value: |
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Behavioural and testable. "Given X, the pipeline does Y."
+      value: |
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+
+  - type: textarea
+    id: pointers
+    attributes:
+      label: Pointers
+      description: Where to start. Files and the relevant "# TODO (cluster)" marker in the skeleton.
+      placeholder: "src/ingest/nodes/triage.py, marker: # TODO (Triage cluster). Routing edges already exist in graph.py."
+    validations:
+      required: false
+
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: Out of scope
+      description: What this issue does not cover. Prevents scope creep.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: size
+    attributes:
+      label: Rough size
+      options:
+        - Quick (under 1h)
+        - Half a build session
+        - Full build session
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: dod
+    attributes:
+      label: Definition of Done (reminder, tick when true)
+      options:
+        - label: CI is green on the pull request
+        - label: PR links the issue with "Closes #<n>" and is squash-merged
+        - label: Default model stays claude-haiku-4-5 unless justified
+    validations:
+      required: false

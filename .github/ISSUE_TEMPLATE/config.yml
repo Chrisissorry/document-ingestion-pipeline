@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: How we work (branching and PRs)
+    url: https://github.com/Chrisissorry/document-ingestion-pipeline/blob/main/docs/branching.md
+    about: Branch naming, pull requests, and merge rules. Read before you start.
