@@ -42,7 +42,7 @@ Two-stage escalation, cost-aware:
                          [Persist: Postgres]
 ```
 
-Default model: `claude-haiku-4-5` via the IU Azure Foundry endpoint. Sonnet 4.6 only when explicitly justified.
+Models via the IU Azure Foundry endpoint. **Pipeline default:** `claude-haiku-4-5` (Sonnet only when explicitly justified). **Development default (Claude Code):** `claude-sonnet-4-6`.
 
 ## Tech stack
 

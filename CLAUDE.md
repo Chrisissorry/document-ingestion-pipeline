@@ -11,7 +11,8 @@ An agentic document ingestion pipeline written in Python with LangGraph. PDF in,
 - 14 students enrolled (~9 typically present). Plan for 14.
 - Mixed OS (macOS / Windows / Linux). Setup must work on all.
 - Shared IU API token against an Azure AI Foundry endpoint that speaks the Anthropic protocol. Quota is a real constraint.
-- Default model: `claude-haiku-4-5`. Sonnet only when explicitly justified.
+- **Agent runtime (the ingestion pipeline):** default model `claude-haiku-4-5`. Sonnet only when explicitly justified — Vision fallback, schema extraction and other pipeline calls run on Haiku.
+- **Development (Claude Code on the host):** default model `claude-sonnet-4-6`. Haiku for tight loops, Opus only when Sonnet is stuck.
 
 ## Key architectural decisions (already made)
 
