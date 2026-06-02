@@ -56,9 +56,11 @@ End-to-end stub runs in Docker. Next steps remaining for setup:
 - [x] `src/ingest/` package: `graph.py` (LangGraph wired through all node names), `nodes/` (stub bodies with cluster TODOs), `tools/` (`pdf.py` real pdfplumber, `llm.py` stubbed client), `cli.py`, `schemas.py`, `state.py`
 - [x] Minimal end-to-end stub: `docker compose run --rm ingest python -m ingest samples/sample_invoice.pdf` returns dummy JSON (no API call, zero quota). Verified.
 - [x] Sample PDFs via `scripts/make_samples.py` (invoice EN/DE, contract, receipt, letter) in `samples/`
-- [ ] Create 7 GitHub issue templates (one per cluster) as examples for students
-- [ ] Create the GitHub repo, push, get the URL into SETUP.md
+- [x] GitHub issue form for cluster tasks (`.github/ISSUE_TEMPLATE/`). Chose a single form over seeded examples: students do the work breakdown and write their own issues in S6. Blank issues disabled so the form is the path.
+- [x] Repo created, pushed, clone URL in SETUP.md points to `Chrisissorry/document-ingestion-pipeline`
 - [ ] Slide add-on for Session 6 presentation (post-it method, acceptance criteria, graph diagram)
+
+Also added since the original plan: Docker stack, CI on PR (`.github/workflows/ci.yml`), `docs/branching.md` (GitHub Flow), `.claude/rules/` (path-scoped) and `.claude/skills/branch`.
 
 ## Working agreements with Chris
 
