@@ -1,0 +1,176 @@
+# Setup
+
+Step-by-step so you have a working environment after Session 6.
+
+Development runs in Docker. Python and Postgres run in containers, so you do **not** install Python or uv on your machine. On the host you only need Docker, git, and Claude Code. Claude Code runs on the host and edits the files that are mounted into the container.
+
+## Prerequisites
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (macOS or Windows)
+- Git
+- GitHub account (send your username to Chris in the session)
+- IU Azure API token (you get it in Session 6)
+
+No local Python, no local uv. Those live in the container.
+
+## 1. Clone the repo
+
+Pick a folder where you keep your repos.
+
+**macOS / Linux**
+
+```bash
+mkdir -p ~/projects && cd ~/projects
+git clone https://github.com/<chris-user>/document-ingestion-pipeline.git
+cd document-ingestion-pipeline
+```
+
+**Windows (PowerShell)**
+
+```powershell
+mkdir $env:USERPROFILE\projects -Force; cd $env:USERPROFILE\projects
+git clone https://github.com/<chris-user>/document-ingestion-pipeline.git
+cd document-ingestion-pipeline
+```
+
+## 2. Install Claude Code (on the host)
+
+**macOS / Linux**
+
+```bash
+curl -fsSL https://claude.ai/install.sh | bash
+```
+
+**Windows (PowerShell)**
+
+```powershell
+irm https://claude.ai/install.ps1 | iex
+```
+
+Check:
+
+```bash
+claude --version
+```
+
+## 3. Configure the IU token
+
+In Session 6 you get the API key. It is needed in two places: by the container (via `.env`) and by Claude Code on the host (via shell environment).
+
+### 3a. `.env` for the container
+
+Copy the template, then open `.env` and paste your token into `ANTHROPIC_AUTH_TOKEN`. The other values are prefilled.
+
+**macOS / Linux**
+
+```bash
+cp .env.example .env
+```
+
+**Windows (PowerShell)**
+
+```powershell
+Copy-Item .env.example .env
+```
+
+`.env` is gitignored. Never commit it.
+
+### 3b. Token for Claude Code on the host
+
+**macOS / Linux**
+
+```bash
+read -s ANTHROPIC_AUTH_TOKEN && export ANTHROPIC_AUTH_TOKEN
+# paste token, press Enter
+export ANTHROPIC_BASE_URL="https://iu-digitalisierung-seminar.services.ai.azure.com/anthropic"
+export ANTHROPIC_MODEL="claude-haiku-4-5"
+```
+
+For permanent use, store the token in the macOS Keychain instead of plain text:
+
+```bash
+security add-generic-password -a "$USER" -s iu-azure-key -w
+# type the token once, then in ~/.zshrc:
+export ANTHROPIC_AUTH_TOKEN="$(security find-generic-password -a "$USER" -s iu-azure-key -w)"
+```
+
+**Windows (PowerShell)**
+
+```powershell
+$env:ANTHROPIC_AUTH_TOKEN = "<paste-token>"
+$env:ANTHROPIC_BASE_URL = "https://iu-digitalisierung-seminar.services.ai.azure.com/anthropic"
+$env:ANTHROPIC_MODEL = "claude-haiku-4-5"
+```
+
+To persist across sessions, add the same three lines to your PowerShell profile (`notepad $PROFILE`).
+
+## 4. Build the container
+
+Same command on macOS and Windows:
+
+```bash
+docker compose build
+```
+
+## 5. Start Postgres
+
+```bash
+docker compose up -d db
+docker compose ps
+```
+
+`db` should report `healthy`.
+
+## 6. Smoke test against the endpoint
+
+**macOS / Linux**
+
+```bash
+curl -X POST "$ANTHROPIC_BASE_URL/v1/messages" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $ANTHROPIC_AUTH_TOKEN" \
+  -H "anthropic-version: 2023-06-01" \
+  -d '{
+    "model": "claude-haiku-4-5",
+    "max_tokens": 200,
+    "messages": [{"role": "user", "content": "Reply with one word: ping"}]
+  }'
+```
+
+**Windows (PowerShell)** — use `curl.exe` (not the `curl` alias):
+
+```powershell
+curl.exe -X POST "$env:ANTHROPIC_BASE_URL/v1/messages" `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer $env:ANTHROPIC_AUTH_TOKEN" `
+  -H "anthropic-version: 2023-06-01" `
+  -d '{\"model\":\"claude-haiku-4-5\",\"max_tokens\":200,\"messages\":[{\"role\":\"user\",\"content\":\"Reply with one word: ping\"}]}'
+```
+
+The response should contain `"content": [{"type": "text", "text": "pong"}]` or similar.
+
+**If you get "No such file or directory":** a copy-paste may have inserted an invisible character (U+200B) before `curl`. Retype the command, or check with `echo -n "curl" | xxd`.
+
+## 7. Test Claude Code against the endpoint
+
+```bash
+claude
+```
+
+In the chat: "Write a Python one-liner that prints 'hello'." If that works, you are ready for Session 7.
+
+## 8. Smoke test the pipeline (in the container)
+
+```bash
+docker compose run --rm ingest python -m ingest samples/sample_invoice.pdf
+```
+
+This starts Postgres (via `depends_on`), runs the pipeline inside the container, and prints JSON (stub data at first, depending on how far the skeleton is built).
+
+## Troubleshooting
+
+- **Docker Desktop not running:** start it before any `docker compose` command.
+- **Port 5432 already in use:** you have a local Postgres running. Stop it, or change the host port mapping in `docker-compose.yml` (e.g. `"5433:5432"`).
+- **Tesseract / OCR errors:** Tier 1.5 OCR is optional and not in the MVP path. Ignore OCR-related errors.
+- **Token quota reached:** we share the IU token. On `429`, wait briefly and stay on Haiku (no Sonnet, no Opus).
+- **PDF not read:** make sure the PDF is in `samples/` and not password protected.
