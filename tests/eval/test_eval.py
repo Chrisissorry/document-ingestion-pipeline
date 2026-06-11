@@ -110,20 +110,22 @@ def test_extraction_accuracy(golden_path: Path, _report_rows: list[dict[str, Any
     response = llm.messages.create(
         model=model_name(),
         max_tokens=1024,
-        messages=[{
-            "role": "user",
-            "content": [
-                {
-                    "type": "document",
-                    "source": {
-                        "type": "base64",
-                        "media_type": "application/pdf",
-                        "data": pdf_b64,
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "document",
+                        "source": {
+                            "type": "base64",
+                            "media_type": "application/pdf",
+                            "data": pdf_b64,
+                        },
                     },
-                },
-                {"type": "text", "text": prompt},
-            ],
-        }],
+                    {"type": "text", "text": prompt},
+                ],
+            }
+        ],
     )
 
     raw_text = response.content[0].text
@@ -138,14 +140,16 @@ def test_extraction_accuracy(golden_path: Path, _report_rows: list[dict[str, Any
     output_tokens: int = response.usage.output_tokens
     cost = (input_tokens * HAIKU_INPUT_PRICE) + (output_tokens * HAIKU_OUTPUT_PRICE)
 
-    _report_rows.append({
-        "file": golden_path.name,
-        "doc_type": doc_type,
-        "field_scores": field_scores,
-        "input_tokens": input_tokens,
-        "output_tokens": output_tokens,
-        "cost": cost,
-    })
+    _report_rows.append(
+        {
+            "file": golden_path.name,
+            "doc_type": doc_type,
+            "field_scores": field_scores,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "cost": cost,
+        }
+    )
 
     matched = sum(field_scores.values())
     total = len(field_scores)
