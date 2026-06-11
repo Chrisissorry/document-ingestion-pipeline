@@ -204,6 +204,23 @@ Run inside the container:
 | Auto-fix lint | `docker compose run --rm ingest uv run ruff check --fix .` |
 | Auto-format | `docker compose run --rm ingest uv run ruff format .` |
 
+## Claude Code verification gate
+
+If you work on this repo with Claude Code, a `Stop` hook (`.claude/settings.json`,
+committed so it applies to everyone) runs the same checks CI runs before the agent
+is allowed to declare its work done: ruff lint, ruff format check, mypy, and
+pytest (eval tests excluded). The checks run inside the `ingest` container, so the
+host needs only Docker, git, and Claude Code, just like everything else here.
+
+- It only runs when the working tree has changes, so chat-only turns stay instant.
+- If a check fails, the agent is blocked from stopping and gets the failure output
+  to fix and retry.
+- If Docker is not running, the gate prints a warning and skips (it never wedges
+  the agent on something you can't fix in two seconds). CI still enforces the
+  checks on every PR.
+
+The point: catch failures locally before a red PR burns shared CI minutes.
+
 ## Pre-commit hooks
 
 Pre-commit runs ruff lint and format checks automatically before each `git commit`, so style issues are caught locally before they reach CI.

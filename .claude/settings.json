@@ -22,7 +22,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "printf '[context] %s | branch: %s | dirty: %s file(s)\\n' \"$(date -Iseconds)\" \"$(git -C \"$CLAUDE_PROJECT_DIR\" rev-parse --abbrev-ref HEAD 2>/dev/null)\" \"$(git -C \"$CLAUDE_PROJECT_DIR\" status --porcelain 2>/dev/null | wc -l | tr -d ' ')\""
+            "command": "printf '[context] %s | branch: %s | dirty: %s file(s)\\n' \"$(date '+%Y-%m-%dT%H:%M:%S%z')\" \"$(git -C \"$CLAUDE_PROJECT_DIR\" rev-parse --abbrev-ref HEAD 2>/dev/null)\" \"$(git -C \"$CLAUDE_PROJECT_DIR\" status --porcelain 2>/dev/null | wc -l | tr -d ' ')\""
           }
         ]
       }
@@ -33,7 +33,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "f=$(echo \"$CLAUDE_TOOL_INPUT\" | grep -o '\"file_path\"[^,}]*' | head -1 | sed 's/.*: *\"//;s/\"$//'); case \"$f\" in *.py) cd \"$CLAUDE_PROJECT_DIR\" && uv run ruff format \"$f\" >/dev/null 2>&1; uv run ruff check --fix \"$f\" >/dev/null 2>&1 ;; esac; exit 0"
+            "command": "f=$(echo \"$CLAUDE_TOOL_INPUT\" | grep -o '\"file_path\"[^,}]*' | head -1 | sed 's/.*: *\"//;s/\"$//'); case \"$f\" in *.py) cd \"$CLAUDE_PROJECT_DIR\" || exit 0; docker info >/dev/null 2>&1 || exit 0; rel=${f#\"$CLAUDE_PROJECT_DIR/\"}; docker compose run --rm --no-deps ingest ruff format \"$rel\" >/dev/null 2>&1; docker compose run --rm --no-deps ingest ruff check --fix \"$rel\" >/dev/null 2>&1 ;; esac; exit 0"
           }
         ]
       }
