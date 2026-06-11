@@ -18,6 +18,16 @@ Read the following files in order before writing any code. After reading, state 
 - Flag any architectural constraint that the implementation must respect (model choice, Haiku default, no OCR on the critical path, Postgres as persistence target).
 - Then implement. Do not re-read the docs during implementation unless something is ambiguous.
 
+## After implementation
+
+Once the code is done, evaluate the docs:
+
+- Does any file in `docs/` describe behaviour that has now changed? Update it.
+- Is there a concept, workflow, or architectural decision introduced that is not yet documented? Create a new file in `docs/`.
+- Does `README.md` need to reflect the change (architecture diagram, setup steps, new node in the graph)?
+
+If no update is needed, state that explicitly so the reviewer knows it was checked.
+
 ## When this skill is NOT needed
 
 - Documentation-only changes (no code touched)
