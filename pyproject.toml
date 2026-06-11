@@ -12,9 +12,6 @@ dependencies = [
     "pillow>=10.0",
 ]
 
-[project.optional-dependencies]
-dev = ["pytest>=8"]
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
@@ -26,7 +23,7 @@ build-backend = "hatchling.build"
 packages = ["src/ingest"]
 
 [dependency-groups]
-dev = ["ruff>=0.4", "mypy>=1.10", "pre-commit>=3.7"]
+dev = ["ruff>=0.4", "mypy>=1.10", "pre-commit>=3.7", "pytest>=8"]
 
 [tool.mypy]
 python_version = "3.12"
