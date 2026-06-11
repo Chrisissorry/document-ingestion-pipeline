@@ -31,14 +31,15 @@ def extract_invoice(state: IngestState) -> dict:
                 "content": (
                     "Extract the invoice fields from the document below as a JSON object "
                     f"matching this schema:\n{schema_json}\n\n"
-                    "Use null for absent fields. Reply with only the JSON object and nothing else.\n\n"
+                    "Use null for absent fields. Reply with only the JSON object.\n\n"
                     f"Document:\n{raw_text}"
                 ),
             }
         ],
     )
 
-    raw = _parse_llm_json(response.content[0].text)
+    text_block = next(b for b in response.content if b.type == "text")
+    raw = _parse_llm_json(text_block.text)  # type: ignore[union-attr]
     inv = Invoice.model_validate(raw)
 
     scored_fields = ["invoice_number", "date", "vendor", "currency", "total"]
