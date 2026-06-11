@@ -204,6 +204,44 @@ Run inside the container:
 | Auto-fix lint | `docker compose run --rm ingest uv run ruff check --fix .` |
 | Auto-format | `docker compose run --rm ingest uv run ruff format .` |
 
+## Pre-commit hooks
+
+Pre-commit runs ruff lint and format checks automatically before each `git commit`, so style issues are caught locally before they reach CI.
+
+### Install pre-commit on the host
+
+**macOS**
+
+```bash
+brew install pre-commit
+```
+
+**Windows (PowerShell)** — requires Python on the host:
+
+```powershell
+pip install pre-commit
+```
+
+**Any OS via pipx** (if you have pipx):
+
+```bash
+pipx install pre-commit
+```
+
+### Activate the hooks (once per clone)
+
+```bash
+pre-commit install
+```
+
+From now on, every `git commit` automatically runs ruff. If a file has a lint or format issue, the commit is blocked and ruff fixes what it can. Re-stage the fixed files and commit again.
+
+To run the checks manually without committing:
+
+```bash
+pre-commit run --all-files
+```
+
 ## Troubleshooting
 
 - **Claude Code shows "Select login method":** the token is not in the shell you launched `claude` from. Claude Code reads the shell environment (and `.claude/settings.json`), not the project `.env`. Run the step 3b export in that same terminal, or persist it in your shell profile, then relaunch `claude`. Also make sure `claude --version` is recent.
