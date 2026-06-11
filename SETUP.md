@@ -193,6 +193,17 @@ docker compose run --rm ingest python -m ingest samples/sample_invoice.pdf
 
 This starts Postgres (via `depends_on`), runs the pipeline inside the container, and prints JSON (stub data at first, depending on how far the skeleton is built).
 
+## Development tools
+
+Run inside the container:
+
+| Task | Command |
+|------|---------|
+| Lint check | `docker compose run --rm ingest uv run ruff check .` |
+| Format check | `docker compose run --rm ingest uv run ruff format --check .` |
+| Auto-fix lint | `docker compose run --rm ingest uv run ruff check --fix .` |
+| Auto-format | `docker compose run --rm ingest uv run ruff format .` |
+
 ## Troubleshooting
 
 - **Claude Code shows "Select login method":** the token is not in the shell you launched `claude` from. Claude Code reads the shell environment (and `.claude/settings.json`), not the project `.env`. Run the step 3b export in that same terminal, or persist it in your shell profile, then relaunch `claude`. Also make sure `claude --version` is recent.
