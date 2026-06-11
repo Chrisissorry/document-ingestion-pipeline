@@ -9,13 +9,13 @@ Read the following files in order before writing any code. After reading, state 
 
 ## Files to read
 
-1. `README.md` — architecture overview, two-tier extraction model, LangGraph graph flow
-2. `docs/branching.md` — workflow and PR rules (cross-check with the `/branch` skill)
+1. `README.md` — project overview and architecture
+2. Everything in `docs/` — list the directory and read each file found there
 
 ## What to do with what you read
 
 - Identify the cluster (Ingestion, Triage, Schemas, Extractors, Validation, HitL, Test Data) the current task belongs to.
-- Flag any architectural constraint from README.md that the implementation must respect (model choice, Haiku default, no OCR on the critical path, Postgres as persistence target).
+- Flag any architectural constraint that the implementation must respect (model choice, Haiku default, no OCR on the critical path, Postgres as persistence target).
 - Then implement. Do not re-read the docs during implementation unless something is ambiguous.
 
 ## When this skill is NOT needed
