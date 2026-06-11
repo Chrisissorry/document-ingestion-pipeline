@@ -20,10 +20,12 @@ jobs:
       - name: Sync dependencies
         run: uv sync
 
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Type check
+        run: uv run mypy src
+
       - name: Pipeline smoke test
         # No API token needed: the stub extractors do not call the model.
         run: uv run python -m ingest samples/sample_invoice.pdf
-
-      # TODO (Test Data and Eval cluster): add lint and tests as they land, e.g.
-      #   - run: uv run ruff check .
-      #   - run: uv run pytest
