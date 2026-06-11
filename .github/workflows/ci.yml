@@ -29,8 +29,10 @@ jobs:
       - name: Type check
         run: uv run mypy src
 
-      - name: Pytest
-        run: uv run pytest -q
+      - name: Pytest (unit + integration, no token)
+        # Excludes eval-marked tests: those hit the real IU endpoint and cost
+        # shared quota, so they run in the separate eval workflow, never on PRs.
+        run: uv run pytest -m "not eval" -q
 
       - name: Pipeline smoke test
         # No API token needed: the stub extractors do not call the model.
