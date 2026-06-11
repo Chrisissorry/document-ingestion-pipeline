@@ -315,6 +315,7 @@ dependencies = [
     { name = "fpdf2" },
     { name = "langgraph" },
     { name = "pdfplumber" },
+    { name = "pillow" },
     { name = "pydantic" },
 ]
 
@@ -330,6 +331,7 @@ requires-dist = [
     { name = "fpdf2", specifier = ">=2.7" },
     { name = "langgraph", specifier = ">=0.2" },
     { name = "pdfplumber", specifier = ">=0.11" },
+    { name = "pillow", specifier = ">=10.0" },
     { name = "pydantic", specifier = ">=2.7" },
 ]
 
