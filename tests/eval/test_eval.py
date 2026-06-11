@@ -154,4 +154,6 @@ def test_extraction_accuracy(golden_path: Path, _report_rows: list[dict[str, Any
     print(f"\n{golden_path.name}: {matched}/{total} fields correct ({accuracy:.0%}), ${cost:.6f}")
     for field, ok in field_scores.items():
         status = "OK  " if ok else "FAIL"
-        print(f"  {status} {field}: expected={expected_fields.get(field)!r}, got={actual_fields.get(field)!r}")
+        expected_value = expected_fields.get(field)
+        actual_value = actual_fields.get(field)
+        print(f"  {status} {field}: expected={expected_value!r}, got={actual_value!r}")
