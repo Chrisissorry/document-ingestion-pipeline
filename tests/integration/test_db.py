@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import uuid
 
 import psycopg
@@ -9,8 +10,10 @@ from ingest.db import connect, init_db
 
 
 def test_init_db_insert_and_query_back() -> None:
-    # Runs by default (-m "not eval"); skips when Postgres is unreachable so
-    # tokenless CI and the agent-gate without a db do not fail.
+    # Runs by default (-m "not eval"); skips when there is no database to reach so
+    # tokenless CI (no DATABASE_URL) and the agent-gate without a db do not fail.
+    if not os.environ.get("DATABASE_URL"):
+        pytest.skip("DATABASE_URL is not set")
     try:
         init_db()
     except psycopg.OperationalError as exc:
