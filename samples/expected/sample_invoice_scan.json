@@ -1,0 +1,18 @@
+{
+  "source": "samples/sample_invoice_scan.pdf",
+  "tier": "vision",
+  "doc_type": "invoice",
+  "confidence": 0.91,
+  "fields": {
+    "doc_type": "invoice",
+    "invoice_number": "INV-2026-0042",
+    "date": "2026-05-28",
+    "vendor": "ACME Supplies Ltd.",
+    "currency": "EUR",
+    "total": 1222.80,
+    "line_items": [
+      {"description": "Consulting services", "amount": 900.00},
+      {"description": "Travel expenses", "amount": 119.00}
+    ]
+  }
+}

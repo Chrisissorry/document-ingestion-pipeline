@@ -28,4 +28,6 @@ jobs:
 
       - name: Pipeline smoke test
         # No API token needed: the stub extractors do not call the model.
-        run: uv run python -m ingest samples/sample_invoice.pdf
+        run: |
+          uv run python -m ingest samples/sample_invoice.pdf
+          uv run python -m ingest samples/sample_invoice_scan.pdf

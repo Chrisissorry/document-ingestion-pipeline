@@ -1,0 +1,11 @@
+{
+  "source": "samples/sample_receipt_scan.pdf",
+  "tier": "vision",
+  "doc_type": "generic",
+  "confidence": 0.85,
+  "fields": {
+    "doc_type": "generic",
+    "title": "Receipt - Cafe Central",
+    "summary": "Cafe receipt for 2 items totalling 6.20 EUR, paid by card on 2026-05-29."
+  }
+}
