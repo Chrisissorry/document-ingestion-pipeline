@@ -22,10 +22,15 @@ jobs:
 
       - name: Ruff lint
         run: uv run ruff check .
-      
+
       - name: Ruff format check
         run: uv run ruff format --check .
 
+      - name: Type check
+        run: uv run mypy src
+
       - name: Pipeline smoke test
         # No API token needed: the stub extractors do not call the model.
-        run: uv run python -m ingest samples/sample_invoice.pdf
+        run: |
+          uv run python -m ingest samples/sample_invoice.pdf
+          uv run python -m ingest samples/sample_invoice_scan.pdf

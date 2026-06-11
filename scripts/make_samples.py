@@ -4,14 +4,19 @@
 
 Core-font (Helvetica) output is latin-1, which covers German umlauts. The Euro
 sign is not in latin-1, so amounts use "EUR".
+
+Scan variants (_scan.pdf) are image-only: text is rendered onto a PIL Image and
+embedded as a PNG. pdfplumber returns "" for these, exercising the Vision route.
 """
 
 from __future__ import annotations
 
+import io
 from pathlib import Path
 
 from fpdf import FPDF
 from fpdf.enums import XPos, YPos
+from PIL import Image, ImageDraw, ImageFont
 
 SAMPLES = Path(__file__).resolve().parent.parent / "samples"
 
@@ -95,6 +100,40 @@ DOCS: dict[str, list[str]] = {
 }
 
 
+SCAN_DOCS: dict[str, list[str]] = {
+    "sample_invoice_scan.pdf": [
+        "ACME Supplies Ltd.",
+        "123 Market Street, London EC1A 1BB",
+        "",
+        "INVOICE",
+        "",
+        "Invoice Number: INV-2026-0042",
+        "Date: 2026-05-28",
+        "Bill To: Globex Corporation",
+        "",
+        "Consulting services      900.00",
+        "Travel expenses          119.00",
+        "",
+        "Subtotal: 1019.00",
+        "VAT (20%): 203.80",
+        "Total: 1222.80 EUR",
+    ],
+    "sample_receipt_scan.pdf": [
+        "Cafe Central",
+        "Marktplatz 2, 10178 Berlin",
+        "",
+        "QUITTUNG / RECEIPT",
+        "Datum: 2026-05-29  14:32",
+        "",
+        "Cappuccino       3.80",
+        "Croissant        2.40",
+        "",
+        "Summe: 6.20 EUR",
+        "Zahlart: Karte",
+    ],
+}
+
+
 def _write(name: str, lines: list[str]) -> None:
     pdf = FPDF()
     pdf.add_page()
@@ -105,10 +144,35 @@ def _write(name: str, lines: list[str]) -> None:
     print(f"wrote {name}")
 
 
+def _write_scan(name: str, lines: list[str]) -> None:
+    width, height = 1240, 1754  # A4 at 150 dpi
+    img = Image.new("RGB", (width, height), color=(255, 255, 255))
+    draw = ImageDraw.Draw(img)
+    font: ImageFont.ImageFont | ImageFont.FreeTypeFont
+    try:
+        font = ImageFont.truetype("DejaVuSansMono.ttf", size=28)
+    except OSError:
+        font = ImageFont.load_default()
+    y = 80
+    for line in lines:
+        draw.text((80, y), line, fill=(0, 0, 0), font=font)
+        y += 40
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.image(buf, x=0, y=0, w=210)  # fill A4 width; no cell() calls = no text layer
+    pdf.output(str(SAMPLES / name))
+    print(f"wrote {name}")
+
+
 def main() -> None:
     SAMPLES.mkdir(exist_ok=True)
     for name, lines in DOCS.items():
         _write(name, lines)
+    for name, lines in SCAN_DOCS.items():
+        _write_scan(name, lines)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from langgraph.graph import END, START, StateGraph
 
 from .nodes.extract import extract_contract, extract_generic, extract_invoice
@@ -22,7 +24,7 @@ def _route_by_confidence(state: IngestState) -> str:
     return "human_review" if state.get("needs_review") else "persist"
 
 
-def build_graph():
+def build_graph() -> Any:
     g = StateGraph(IngestState)
     g.add_node("ingest", ingest)
     g.add_node("triage", triage)
