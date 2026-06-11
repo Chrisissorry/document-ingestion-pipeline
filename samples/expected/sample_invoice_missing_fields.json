@@ -1,0 +1,15 @@
+{
+  "source": "samples/sample_invoice_missing_fields.pdf",
+  "tier": "text",
+  "doc_type": "invoice",
+  "confidence": 0.3,
+  "fields": {
+    "doc_type": "invoice",
+    "invoice_number": null,
+    "date": null,
+    "vendor": null,
+    "currency": null,
+    "total": null,
+    "line_items": []
+  }
+}

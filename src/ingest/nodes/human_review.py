@@ -4,8 +4,15 @@ from ..state import IngestState
 
 
 def human_review(state: IngestState) -> dict:
-    # TODO (Human-in-the-Loop cluster): pause the graph with a LangGraph interrupt
-    # and ask on the CLI to confirm or correct the low-confidence fields. The stub
-    # just clears the flag so the smoke test stays non-interactive.
-    print("[human-review] low confidence; fields would be confirmed on the CLI here")
+    # TODO (Human-in-the-Loop cluster): replace the print statements with a
+    # LangGraph interrupt so the graph pauses and the CLI can collect corrections.
+    fields = state.get("fields", {})
+    missing = [k for k, v in fields.items() if v is None or v == []]
+    print(
+        f"[human-review] doc_type={state.get('doc_type')}, "
+        f"confidence={state.get('confidence', 0.0):.2f}"
+    )
+    if missing:
+        print(f"[human-review] missing required fields: {missing}")
+    print("[human-review] fields would be confirmed via CLI interrupt here")
     return {"needs_review": False}
