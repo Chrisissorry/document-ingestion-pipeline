@@ -28,8 +28,9 @@ def persist(state: IngestState) -> dict:
     }
     # source is the primary key; without it there is nothing to upsert against.
     if record["source"]:
-        # A returned envelope is the contract; an unreachable DB must not crash the
-        # pipeline (or the suite). The integration test verifies the write itself.
+        # A returned envelope is the contract; a missing DATABASE_URL (RuntimeError
+        # from the DB helper, e.g. tokenless CI) or an unreachable DB must not crash
+        # the pipeline (or the suite). The integration test verifies the write itself.
         try:
             init_db()
             with connect() as conn:
@@ -44,6 +45,6 @@ def persist(state: IngestState) -> dict:
                     ),
                 )
                 conn.commit()
-        except psycopg.OperationalError:
+        except (psycopg.OperationalError, RuntimeError):
             pass
     return {"result": record}

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import uuid
 
 import psycopg
@@ -24,6 +25,8 @@ def test_persist_upserts_exactly_one_row() -> None:
         "confidence": 0.9,
         "fields": {"doc_type": "invoice", "total": "100.00"},
     }
+    if not os.environ.get("DATABASE_URL"):
+        pytest.skip("DATABASE_URL is not set")
     try:
         init_db()
     except psycopg.OperationalError:
