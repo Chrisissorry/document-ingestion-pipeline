@@ -5,5 +5,38 @@
     "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-4-6",
     "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-4-8",
     "ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-haiku-4-5"
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/agent-gate.sh\""
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "printf '[context] %s | branch: %s | dirty: %s file(s)\\n' \"$(date '+%Y-%m-%dT%H:%M:%S%z')\" \"$(git -C \"$CLAUDE_PROJECT_DIR\" rev-parse --abbrev-ref HEAD 2>/dev/null)\" \"$(git -C \"$CLAUDE_PROJECT_DIR\" status --porcelain 2>/dev/null | wc -l | tr -d ' ')\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=$(echo \"$CLAUDE_TOOL_INPUT\" | grep -o '\"file_path\"[^,}]*' | head -1 | sed 's/.*: *\"//;s/\"$//'); case \"$f\" in *.py) cd \"$CLAUDE_PROJECT_DIR\" || exit 0; docker info >/dev/null 2>&1 || exit 0; rel=${f#\"$CLAUDE_PROJECT_DIR/\"}; docker compose run --rm --no-deps ingest ruff format \"$rel\" >/dev/null 2>&1; docker compose run --rm --no-deps ingest ruff check --fix \"$rel\" >/dev/null 2>&1 ;; esac; exit 0"
+          }
+        ]
+      }
+    ]
   }
 }

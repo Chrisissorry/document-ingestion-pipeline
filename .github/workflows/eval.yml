@@ -1,0 +1,41 @@
+name: Agent Eval
+
+# Real-model eval against the IU endpoint. Costs shared quota, so it runs
+# off the PR critical path: manually from the Actions tab, plus a nightly
+# schedule. Never on pull_request.
+#
+# Requires the repo secret IU_ANTHROPIC_TOKEN (Settings > Secrets and
+# variables > Actions). Without it the eval tests self-skip, so the job
+# stays green rather than failing.
+on:
+  workflow_dispatch:
+  schedule:
+    # 03:27 UTC nightly (off the round hour to avoid the scheduler stampede).
+    - cron: "27 3 * * *"
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Sync dependencies
+        run: uv sync
+
+      - name: Run eval
+        env:
+          ANTHROPIC_AUTH_TOKEN: ${{ secrets.IU_ANTHROPIC_TOKEN }}
+        run: uv run pytest -m eval -q
+
+      - name: Upload eval report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-report
+          path: eval_report.md
+          if-no-files-found: ignore

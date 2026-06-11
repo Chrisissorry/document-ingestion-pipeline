@@ -1,0 +1,18 @@
+{
+  "source": "samples/sample_invoice_de.pdf",
+  "tier": "text",
+  "doc_type": "invoice",
+  "confidence": 0.95,
+  "fields": {
+    "doc_type": "invoice",
+    "invoice_number": "RE-2026-0815",
+    "date": "2026-05-30",
+    "vendor": "Mueller Buerobedarf GmbH",
+    "currency": "EUR",
+    "total": 875.84,
+    "line_items": [
+      {"description": "Buerostuehle (3 Stueck)", "amount": 447.00},
+      {"description": "Schreibtisch", "amount": 289.00}
+    ]
+  }
+}
