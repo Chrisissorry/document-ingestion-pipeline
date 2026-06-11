@@ -472,6 +472,7 @@ def _make_receipt_scan(n: int, rng: random.Random) -> tuple[str, list[str], dict
 # Main
 # ---------------------------------------------------------------------------
 
+
 def _write_pages(name: str, pages: list[list[str]]) -> None:
     pdf = FPDF()
     pdf.set_font("Helvetica", size=12)
@@ -545,9 +546,7 @@ def _make_unclassifiable(_n: int, _rng: random.Random) -> tuple[str, list[str], 
     return filename, lines, golden
 
 
-def _make_multipage_contract(
-    _n: int, _rng: random.Random
-) -> tuple[str, list[list[str]], dict]:
+def _make_multipage_contract(_n: int, _rng: random.Random) -> tuple[str, list[list[str]], dict]:
     filename = "sample_multipage.pdf"
     pages = [
         [
