@@ -29,6 +29,9 @@ jobs:
       - name: Type check
         run: uv run mypy src
 
+      - name: Pytest
+        run: uv run pytest -q
+
       - name: Pipeline smoke test
         # No API token needed: the stub extractors do not call the model.
         run: |

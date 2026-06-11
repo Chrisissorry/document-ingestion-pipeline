@@ -1,0 +1,11 @@
+{
+  "source": "samples/sample_letter.pdf",
+  "tier": "text",
+  "doc_type": "generic",
+  "confidence": 0.95,
+  "fields": {
+    "doc_type": "generic",
+    "title": "Letter from Globex Corporation",
+    "summary": "Business letter dated 2026-05-25 from Jane Doe (Globex Corporation) to Mr. Smith, responding to a service inquiry and confirming a meeting on June 11th."
+  }
+}

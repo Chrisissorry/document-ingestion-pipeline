@@ -1,0 +1,12 @@
+{
+  "source": "samples/sample_contract.pdf",
+  "tier": "text",
+  "doc_type": "contract",
+  "confidence": 0.95,
+  "fields": {
+    "doc_type": "contract",
+    "parties": ["Initech LLC", "Globex Corporation"],
+    "effective_date": "2026-06-11",
+    "term": "12 months"
+  }
+}
