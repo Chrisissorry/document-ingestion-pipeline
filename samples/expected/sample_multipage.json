@@ -1,0 +1,15 @@
+{
+  "source": "samples/sample_multipage.pdf",
+  "tier": "text",
+  "doc_type": "contract",
+  "confidence": 0.9,
+  "fields": {
+    "doc_type": "contract",
+    "parties": [
+      "Pinnacle Consulting UG",
+      "Horizon Retail GmbH"
+    ],
+    "effective_date": "2026-07-01",
+    "term": "24 months"
+  }
+}
