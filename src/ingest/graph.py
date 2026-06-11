@@ -42,7 +42,9 @@ def build_graph():
     )
     for extractor in ("extract_invoice", "extract_contract", "extract_generic"):
         g.add_edge(extractor, "validate")
-    g.add_conditional_edges("validate", _route_by_confidence, ["human_review", "persist"])
+    g.add_conditional_edges(
+        "validate", _route_by_confidence, ["human_review", "persist"]
+    )
     g.add_edge("human_review", "persist")
     g.add_edge("persist", END)
     return g.compile()
