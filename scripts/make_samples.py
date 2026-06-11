@@ -472,8 +472,140 @@ def _make_receipt_scan(n: int, rng: random.Random) -> tuple[str, list[str], dict
 # Main
 # ---------------------------------------------------------------------------
 
+
+def _write_pages(name: str, pages: list[list[str]]) -> None:
+    pdf = FPDF()
+    pdf.set_font("Helvetica", size=12)
+    for page in pages:
+        pdf.add_page()
+        for line in page:
+            pdf.cell(0, 8, line, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    pdf.output(str(SAMPLES / name))
+    print(f"wrote {name}")
+
+
+def _make_invoice_missing_fields(_n: int, _rng: random.Random) -> tuple[str, list[str], dict]:
+    filename = "sample_invoice_missing_fields.pdf"
+    lines = [
+        "INVOICE",
+        "",
+        "Bill To: Riverdale Partners GmbH",
+        "Attn: Procurement Department",
+        "",
+        "Consulting services rendered during Q2.",
+        "",
+        "Please arrange payment at your earliest convenience.",
+        "Bank details available on request.",
+    ]
+    golden: dict = {
+        "source": f"samples/{filename}",
+        "tier": "text",
+        "doc_type": "invoice",
+        "confidence": 0.3,
+        "fields": {
+            "doc_type": "invoice",
+            "invoice_number": None,
+            "date": None,
+            "vendor": None,
+            "currency": None,
+            "total": None,
+            "line_items": [],
+        },
+    }
+    return filename, lines, golden
+
+
+def _make_unclassifiable(_n: int, _rng: random.Random) -> tuple[str, list[str], dict]:
+    filename = "sample_unclassifiable.pdf"
+    lines = [
+        "INTERNAL MEMO",
+        "",
+        "Ref: Q3 Planning Cycle",
+        "Distribution: All Department Heads",
+        "Priority: Normal",
+        "",
+        "Please review the attached materials before Friday.",
+        "Action items will be tracked separately.",
+        "",
+        "- Asset utilisation targets remain under review.",
+        "- No decisions have been finalised at this stage.",
+        "",
+        "This memo does not constitute a legal agreement.",
+    ]
+    golden: dict = {
+        "source": f"samples/{filename}",
+        "tier": "text",
+        "doc_type": "generic",
+        "confidence": 0.6,
+        "fields": {
+            "doc_type": "generic",
+            "title": "Internal Memo — Q3 Planning",
+            "summary": "Internal memo about Q3 planning with action items for department heads.",
+        },
+    }
+    return filename, lines, golden
+
+
+def _make_multipage_contract(_n: int, _rng: random.Random) -> tuple[str, list[list[str]], dict]:
+    filename = "sample_multipage.pdf"
+    pages = [
+        [
+            "SERVICE AGREEMENT  (page 1 of 2)",
+            "",
+            "This agreement is entered into between:",
+            "Party A: Pinnacle Consulting UG",
+            "Party B: Horizon Retail GmbH",
+            "",
+            "Effective Date: 2026-07-01",
+            "Term: 24 months",
+            "",
+            "1. Scope of Services",
+            "   Pinnacle Consulting UG shall provide strategic advisory",
+            "   services as detailed in Schedule A, attached hereto.",
+            "",
+            "2. Fees",
+            "   Monthly retainer: 4500.00 EUR, invoiced on the 1st.",
+            "   Expenses reimbursed at cost with prior written approval.",
+        ],
+        [
+            "SERVICE AGREEMENT  (page 2 of 2)",
+            "",
+            "3. Confidentiality",
+            "   Each party shall keep confidential all proprietary",
+            "   information received from the other party.",
+            "",
+            "4. Termination",
+            "   Either party may terminate with 30 days written notice.",
+            "   Fees accrued to the termination date remain payable.",
+            "",
+            "5. Governing Law",
+            "   This agreement is governed by the laws of Germany.",
+            "",
+            "Signed:",
+            "",
+            "Party A: ____________________  Date: __________",
+            "Party B: ____________________  Date: __________",
+        ],
+    ]
+    golden: dict = {
+        "source": f"samples/{filename}",
+        "tier": "text",
+        "doc_type": "contract",
+        "confidence": 0.9,
+        "fields": {
+            "doc_type": "contract",
+            "parties": ["Pinnacle Consulting UG", "Horizon Retail GmbH"],
+            "effective_date": "2026-07-01",
+            "term": "24 months",
+        },
+    }
+    return filename, pages, golden
+
+
 FACTORIES_TEXT = [_make_invoice, _make_invoice_de, _make_contract, _make_receipt, _make_letter]
 FACTORIES_SCAN = [_make_invoice_scan, _make_receipt_scan]
+FACTORIES_SPECIAL = [_make_invoice_missing_fields, _make_unclassifiable]
+FACTORIES_SPECIAL_MULTIPAGE = [_make_multipage_contract]
 
 
 def main() -> None:
@@ -503,6 +635,16 @@ def main() -> None:
             filename, lines, golden = factory(n, rng)
             _write_scan(filename, lines)
             _write_golden(filename.replace(".pdf", ".json"), golden)
+
+    for factory in FACTORIES_SPECIAL:
+        filename, lines, golden = factory(0, rng)
+        _write_pdf(filename, lines)
+        _write_golden(filename.replace(".pdf", ".json"), golden)
+
+    for factory in FACTORIES_SPECIAL_MULTIPAGE:
+        filename, pages, golden = factory(0, rng)
+        _write_pages(filename, pages)
+        _write_golden(filename.replace(".pdf", ".json"), golden)
 
 
 if __name__ == "__main__":

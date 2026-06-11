@@ -1,0 +1,11 @@
+{
+  "source": "samples/sample_unclassifiable.pdf",
+  "tier": "text",
+  "doc_type": "generic",
+  "confidence": 0.6,
+  "fields": {
+    "doc_type": "generic",
+    "title": "Internal Memo \u2014 Q3 Planning",
+    "summary": "Internal memo about Q3 planning with action items for department heads."
+  }
+}
