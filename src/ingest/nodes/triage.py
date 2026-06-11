@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-from anthropic.types import TextBlock
+import json
 
 from ..state import IngestState
-from ..tools.llm import client, model_name
+from ..tools import llm
 
 _SYSTEM = (
-    "Classify the document into one of three types: invoice, contract, or generic. "
-    "Reply with exactly one word. When uncertain, reply: generic."
+    "Classify the document. Reply with JSON only: "
+    '{"doc_type": "invoice"}, {"doc_type": "contract"}, or {"doc_type": "generic"}. '
+    "Default to generic when the type is unclear."
 )
 
 _VALID = {"invoice", "contract", "generic"}
@@ -18,16 +19,20 @@ def triage(state: IngestState) -> dict:
     if not raw_text:
         return {"doc_type": "generic"}
     try:
-        response = client().messages.create(
-            model=model_name(),
-            max_tokens=10,
+        response = llm.client().messages.create(
+            model=llm.model_name(),
+            max_tokens=32,
             system=_SYSTEM,
             messages=[{"role": "user", "content": raw_text}],
         )
-        block = response.content[0]
-        if not isinstance(block, TextBlock):
+        text = getattr(response.content[0], "text", None)
+        if not isinstance(text, str):
             return {"doc_type": "generic"}
-        word = block.text.strip().lower()
+        try:
+            data = json.loads(text.strip())
+            word = str(data.get("doc_type", "generic")).lower()
+        except (json.JSONDecodeError, AttributeError, TypeError):
+            word = text.strip().lower()
         return {"doc_type": word if word in _VALID else "generic"}
     except Exception:
         return {"doc_type": "generic"}
