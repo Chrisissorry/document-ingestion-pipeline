@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 import ingest.nodes.extract as extract
-from ingest.graph import _route_by_confidence, build_graph, run
+from ingest.graph import _route_by_confidence, build_graph, run, thread_config
 from ingest.schemas import Invoice
 
 ROOT = Path(__file__).resolve().parent.parent.parent
@@ -68,6 +68,6 @@ def test_graph_traverses_human_review_branch_on_low_confidence(monkeypatch, fake
 
     monkeypatch.setattr("ingest.graph.extract_invoice", _low_confidence_invoice)
 
-    final = build_graph().invoke({"path": str(SAMPLES / "sample_invoice.pdf")})
+    final = build_graph().invoke({"path": str(SAMPLES / "sample_invoice.pdf")}, thread_config())
     assert final["needs_review"] is False  # human_review ran and cleared the flag
     assert final["confidence"] == 0.1
