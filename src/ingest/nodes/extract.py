@@ -2,10 +2,7 @@ from __future__ import annotations
 
 from ..schemas import Contract, GenericDocument, Invoice
 from ..state import IngestState
-
-# TODO (Extractors cluster): replace the hardcoded values with a Haiku call that
-# fills the pydantic schema from state["raw_text"]. The stub returns fixed fields
-# and a confidence so the graph runs without touching the API.
+from ..tools.llm import extract_structured
 
 
 def extract_invoice(state: IngestState) -> dict:
@@ -29,5 +26,8 @@ def extract_contract(state: IngestState) -> dict:
 
 
 def extract_generic(state: IngestState) -> dict:
-    g = GenericDocument(title="Stub document", summary="Placeholder summary.")
-    return {"fields": g.model_dump(), "confidence": 0.75}
+    g = extract_structured(GenericDocument, state["raw_text"])
+    optional_fields = [f for f in GenericDocument.model_fields if f != "doc_type"]
+    populated = sum(1 for f in optional_fields if getattr(g, f) is not None)
+    confidence = round(populated / len(optional_fields), 2) if optional_fields else 1.0
+    return {"fields": g.model_dump(), "confidence": confidence}
