@@ -18,7 +18,11 @@ def test_parse_value_keeps_json_types() -> None:
 
 
 def test_cli_without_args_prints_usage(capsys) -> None:
-    assert main([]) == 2
+    import pytest
+
+    with pytest.raises(SystemExit) as exc:
+        main([])
+    assert exc.value.code == 2
     assert "usage" in capsys.readouterr().err
 
 
