@@ -10,17 +10,17 @@ from pydantic import BaseModel
 HAIKU_INPUT_PRICE = 1.00 / 1_000_000
 HAIKU_OUTPUT_PRICE = 5.00 / 1_000_000
 
-IU_BASE_URL = "https://iu-digitalisierung-seminar.services.ai.azure.com/anthropic"
-
-
 def model_name() -> str:
     return os.environ.get("ANTHROPIC_MODEL", "claude-haiku-4-5")
 
 
 def client() -> Anthropic:
+    # ANTHROPIC_AUTH_TOKEN is used so the same env var works for both the IU
+    # Azure endpoint and the standard Anthropic API. ANTHROPIC_BASE_URL defaults
+    # to the standard API; set it in .env to point at the IU Azure endpoint.
     return Anthropic(
         api_key=os.environ["ANTHROPIC_AUTH_TOKEN"],
-        base_url=os.environ.get("ANTHROPIC_BASE_URL", IU_BASE_URL),
+        base_url=os.environ.get("ANTHROPIC_BASE_URL"),
     )
 
 
