@@ -1,0 +1,63 @@
+name: Claude Code Review
+
+# Reviews each PR once, when it is opened. Not on synchronize: every push
+# would spend shared IU quota again, and 14 students pushing during the
+# hackathon would drain it fast. Re-trigger a review by closing and
+# reopening the PR, or mention @claude in a comment.
+#
+# Auth is the IU Azure Foundry endpoint (Anthropic-compatible passthrough),
+# not api.anthropic.com. The action reads ANTHROPIC_AUTH_TOKEN +
+# ANTHROPIC_BASE_URL from env, so this uses the same bearer-token path as
+# the rest of the repo, not an OAuth token.
+#
+# Requires repo secret IU_ANTHROPIC_TOKEN (shared with the eval workflow).
+# Without it the job fails fast on the auth step rather than running blind.
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  claude-review:
+    # Skip Dependabot PRs: their secret store is empty, so the token is always
+    # missing and the job would fail with a misleading red. Real CI covers them.
+    if: github.actor != 'dependabot[bot]'
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: read
+      id-token: write
+
+    env:
+      ANTHROPIC_AUTH_TOKEN: ${{ secrets.IU_ANTHROPIC_TOKEN }}
+      ANTHROPIC_BASE_URL: https://iu-digitalisierung-seminar.services.ai.azure.com/anthropic
+      ANTHROPIC_MODEL: claude-sonnet-4-6
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Code Review
+        id: claude-review
+        uses: anthropics/claude-code-action@v1
+        with:
+          track_progress: true
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            Review this pull request and give feedback on:
+            - Code quality and adherence to the repo conventions (English only,
+              no em-dashes, document only the non-obvious WHY)
+            - Potential bugs or issues
+            - Performance considerations
+            - Security concerns (this repo is used to teach LLM prompt injection,
+              so flag any input that reaches a model prompt unguarded)
+            - Test coverage
+
+            This is a teaching repo built by students in a hackathon. Be
+            constructive, concise, and lead with the most important point.

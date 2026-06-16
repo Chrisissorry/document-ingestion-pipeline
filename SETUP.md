@@ -221,6 +221,29 @@ host needs only Docker, git, and Claude Code, just like everything else here.
 
 The point: catch failures locally before a red PR burns shared CI minutes.
 
+## Automated PR review (Claude)
+
+When a pull request is **opened**, `.github/workflows/claude-review.yml` runs a
+Claude review against the IU Azure Foundry endpoint and posts feedback as a PR
+comment. It fires once per PR (on open, not on every push) to keep shared quota
+under control. Re-trigger by reopening the PR or mentioning `@claude` in a comment.
+
+The review runs on `claude-sonnet-4-6`.
+
+### One-time setup (Chris only)
+
+The workflow reuses the same secret as the eval workflow, `IU_ANTHROPIC_TOKEN`.
+If the eval workflow already works, nothing more is needed. To set it from
+scratch:
+
+```bash
+gh secret set IU_ANTHROPIC_TOKEN --repo Chrisissorry/document-ingestion-pipeline
+# paste the IU token when prompted
+```
+
+Students do not touch CI secrets. The endpoint URL and model are committed in the
+workflow as plain env, not secrets.
+
 ## Pre-commit hooks
 
 Pre-commit runs ruff lint and format checks automatically before each `git commit`, so style issues are caught locally before they reach CI.
