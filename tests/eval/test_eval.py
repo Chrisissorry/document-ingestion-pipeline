@@ -10,7 +10,13 @@ from typing import Any
 import pytest
 
 from ingest.schemas import Contract, GenericDocument, Invoice
-from ingest.tools.llm import HAIKU_INPUT_PRICE, HAIKU_OUTPUT_PRICE, client, model_name
+from ingest.tools.llm import (
+    HAIKU_INPUT_PRICE,
+    HAIKU_OUTPUT_PRICE,
+    client,
+    extract_structured,
+    model_name,
+)
 
 GOLDEN_DIR = Path(__file__).parent.parent.parent / "samples" / "expected"
 SAMPLES_DIR = Path(__file__).parent.parent.parent / "samples"
@@ -161,3 +167,18 @@ def test_extraction_accuracy(golden_path: Path, _report_rows: list[dict[str, Any
         expected_value = expected_fields.get(field)
         actual_value = actual_fields.get(field)
         print(f"  {status} {field}: expected={expected_value!r}, got={actual_value!r}")
+
+
+@pytest.mark.eval
+@pytest.mark.skipif(
+    not os.environ.get("ANTHROPIC_AUTH_TOKEN"),
+    reason="ANTHROPIC_AUTH_TOKEN not set — skipping real-model eval",
+)
+def test_extract_structured_live() -> None:
+    text = (
+        "Invoice #INV-2024-001\nDate: 2024-01-15\nVendor: ACME Supplies Ltd.\nTotal: EUR 1,222.80\n"
+    )
+    result = extract_structured(Invoice, text)
+    assert isinstance(result, Invoice)
+    assert result.invoice_number is not None
+    assert result.total is not None

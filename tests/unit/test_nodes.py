@@ -152,11 +152,60 @@ def test_validate_passes_contract_with_all_required_fields() -> None:
 
 
 # --- human_review ---------------------------------------------------------
+# human_review pauses with interrupt(), which only works inside a compiled
+# graph with a checkpointer, so the unit tests wrap the node in a one-node graph.
 
 
-def test_human_review_clears_the_flag() -> None:
-    out = human_review({"needs_review": True, "fields": {}})
+def _review_graph():
+    from langgraph.checkpoint.memory import MemorySaver
+    from langgraph.graph import END, START, StateGraph
+
+    from ingest.state import IngestState
+
+    g = StateGraph(IngestState)
+    g.add_node("human_review", human_review)
+    g.add_edge(START, "human_review")
+    g.add_edge("human_review", END)
+    return g.compile(checkpointer=MemorySaver())
+
+
+def test_human_review_interrupts_with_flagged_fields() -> None:
+    graph = _review_graph()
+    state = {
+        "doc_type": "invoice",
+        "confidence": 0.4,
+        "needs_review": True,
+        "fields": {"doc_type": "invoice", "vendor": None, "total": 100.0},
+    }
+    paused = graph.invoke(state, {"configurable": {"thread_id": "t"}})
+    payload = paused["__interrupt__"][0].value
+    assert payload["flagged"] == ["vendor"]
+    assert payload["fields"] == state["fields"]
+    assert payload["doc_type"] == "invoice"
+
+
+def test_human_review_applies_overrides_and_clears_the_flag() -> None:
+    from langgraph.types import Command
+
+    graph = _review_graph()
+    config = {"configurable": {"thread_id": "t"}}
+    state = {"needs_review": True, "fields": {"doc_type": "invoice", "vendor": None}}
+    graph.invoke(state, config)
+    out = graph.invoke(Command(resume={"overrides": {"vendor": "ACME"}}), config)
     assert out["needs_review"] is False
+    assert out["fields"] == {"doc_type": "invoice", "vendor": "ACME"}
+
+
+def test_human_review_accept_all_keeps_fields_unchanged() -> None:
+    from langgraph.types import Command
+
+    graph = _review_graph()
+    config = {"configurable": {"thread_id": "t"}}
+    state = {"needs_review": True, "fields": {"doc_type": "invoice", "vendor": None}}
+    graph.invoke(state, config)
+    out = graph.invoke(Command(resume={"overrides": {}}), config)
+    assert out["needs_review"] is False
+    assert out["fields"] == state["fields"]
 
 
 # --- persist --------------------------------------------------------------
