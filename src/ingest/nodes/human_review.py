@@ -1,18 +1,26 @@
 from __future__ import annotations
 
+from typing import Any
+
+from langgraph.types import interrupt
+
 from ..state import IngestState
 
 
 def human_review(state: IngestState) -> dict:
-    # TODO (Human-in-the-Loop cluster): replace the print statements with a
-    # LangGraph interrupt so the graph pauses and the CLI can collect corrections.
     fields = state.get("fields", {})
-    missing = [k for k, v in fields.items() if v is None or v == []]
-    print(
-        f"[human-review] doc_type={state.get('doc_type')}, "
-        f"confidence={state.get('confidence', 0.0):.2f}"
+    # Same missing-field notion as validate(): None means missing. An empty
+    # list (e.g. line_items) is a valid extraction, not a flag.
+    flagged = [k for k, v in fields.items() if v is None]
+    # The resume payload is wrapped ({"overrides": {...}}) because a falsy resume
+    # value (empty dict = "accept everything") re-pauses instead of resuming.
+    answer: dict[str, Any] = interrupt(
+        {
+            "doc_type": state.get("doc_type"),
+            "confidence": state.get("confidence", 0.0),
+            "fields": fields,
+            "flagged": flagged,
+        }
     )
-    if missing:
-        print(f"[human-review] missing required fields: {missing}")
-    print("[human-review] fields would be confirmed via CLI interrupt here")
-    return {"needs_review": False}
+    overrides = answer.get("overrides", {})
+    return {"fields": {**fields, **overrides}, "needs_review": False}

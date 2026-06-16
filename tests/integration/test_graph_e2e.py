@@ -3,8 +3,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from langgraph.types import Command
+
 import ingest.nodes.extract as extract
-from ingest.graph import _route_by_confidence, build_graph, run
+from ingest.graph import _route_by_confidence, build_graph, run, thread_config
 from ingest.schemas import Invoice
 
 ROOT = Path(__file__).resolve().parent.parent.parent
@@ -55,12 +57,10 @@ def test_low_confidence_routes_to_human_review() -> None:
     assert _route_by_confidence({"needs_review": False}) == "persist"
 
 
-def test_graph_traverses_human_review_branch_on_low_confidence(monkeypatch, fake_llm) -> None:
+def test_graph_pauses_on_low_confidence_and_resumes_with_corrections(monkeypatch, fake_llm) -> None:
     # Force the invoice extractor below CONFIDENCE_THRESHOLD so validate flags review
-    # and the conditional edge routes through human_review. The stub human_review has
-    # no real LangGraph interrupt yet, so we assert the branch executed (it clears the
-    # flag) rather than asserting a paused graph.
-    # TODO: once human_review uses a real interrupt, assert the graph pauses here.
+    # and the conditional edge routes through human_review, which pauses the graph
+    # with a real interrupt instead of writing.
     def _low_confidence_invoice(state):
         out = extract.extract_invoice(state)
         out["confidence"] = 0.1
@@ -68,6 +68,13 @@ def test_graph_traverses_human_review_branch_on_low_confidence(monkeypatch, fake
 
     monkeypatch.setattr("ingest.graph.extract_invoice", _low_confidence_invoice)
 
-    final = build_graph().invoke({"path": str(SAMPLES / "sample_invoice.pdf")})
-    assert final["needs_review"] is False  # human_review ran and cleared the flag
-    assert final["confidence"] == 0.1
+    graph = build_graph()
+    config = thread_config()
+    paused = graph.invoke({"path": str(SAMPLES / "sample_invoice.pdf")}, config)
+    assert "result" not in paused  # nothing persisted while paused
+    payload = paused["__interrupt__"][0].value
+    assert payload["confidence"] == 0.1
+
+    final = graph.invoke(Command(resume={"overrides": {"vendor": "Corrected GmbH"}}), config)
+    assert final["needs_review"] is False
+    assert final["result"]["fields"]["vendor"] == "Corrected GmbH"
