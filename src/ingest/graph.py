@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from typing import Any
+from uuid import uuid4
 
+from langgraph.checkpoint.base import BaseCheckpointSaver
+from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
 
 from .nodes.extract import extract_contract, extract_generic, extract_invoice
@@ -24,7 +27,7 @@ def _route_by_confidence(state: IngestState) -> str:
     return "human_review" if state.get("needs_review") else "persist"
 
 
-def build_graph() -> Any:
+def build_graph(checkpointer: BaseCheckpointSaver | None = None) -> Any:
     g = StateGraph(IngestState)
     g.add_node("ingest", ingest)
     g.add_node("triage", triage)
@@ -47,9 +50,15 @@ def build_graph() -> Any:
     g.add_conditional_edges("validate", _route_by_confidence, ["human_review", "persist"])
     g.add_edge("human_review", "persist")
     g.add_edge("persist", END)
-    return g.compile()
+    # MemorySaver is the dev default; interrupt() needs a checkpointer to pause and
+    # resume. Pass a Postgres-backed saver here once persistence of paused runs matters.
+    return g.compile(checkpointer=checkpointer or MemorySaver())
 
 
-def run(path: str) -> dict:
-    final = build_graph().invoke({"path": path})
+def thread_config(thread_id: str | None = None) -> dict[str, Any]:
+    return {"configurable": {"thread_id": thread_id or uuid4().hex}}
+
+
+def run(path: str, thread_id: str | None = None) -> dict:
+    final = build_graph().invoke({"path": path}, thread_config(thread_id))
     return final["result"]
