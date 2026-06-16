@@ -34,7 +34,7 @@ class GenericDocument(BaseModel):
 
 
 REQUIRED_FIELDS: Final[dict[str, list[str]]] = {
-    "invoice": ["invoice_number", "vendor", "total"],
-    "contract": ["parties"],
+    "invoice": ["invoice_number", "date", "vendor", "total"],
+    "contract": ["parties", "effective_date", "term"],
     "generic": ["summary"],
 }
