@@ -34,8 +34,6 @@ jobs:
         # shared quota, so they run in the separate eval workflow, never on PRs.
         run: uv run pytest -m "not eval" -q
 
-      - name: Pipeline smoke test
-        # No API token needed: the stub extractors do not call the model.
-        run: |
-          uv run python -m ingest samples/sample_invoice.pdf
-          uv run python -m ingest samples/sample_invoice_scan.pdf
+      # Pipeline smoke test removed: extractors now call the LLM, so a real
+      # token is needed. End-to-end graph coverage lives in the pytest suite
+      # via the fake_llm fixture (see tests/integration/test_graph_e2e.py).

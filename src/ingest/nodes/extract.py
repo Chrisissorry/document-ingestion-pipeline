@@ -6,6 +6,7 @@ import re
 from ..schemas import Contract, GenericDocument, Invoice
 from ..state import IngestState
 from ..tools import llm
+from ..tools.llm import extract_structured
 
 
 def _parse_llm_json(text: str) -> dict:
@@ -61,5 +62,8 @@ def extract_contract(state: IngestState) -> dict:
 
 
 def extract_generic(state: IngestState) -> dict:
-    g = GenericDocument(title="Stub document", summary="Placeholder summary.")
-    return {"fields": g.model_dump(), "confidence": 0.75}
+    g = extract_structured(GenericDocument, state["raw_text"])
+    optional_fields = [f for f in GenericDocument.model_fields if f != "doc_type"]
+    populated = sum(1 for f in optional_fields if getattr(g, f) is not None)
+    confidence = round(populated / len(optional_fields), 2) if optional_fields else 1.0
+    return {"fields": g.model_dump(), "confidence": confidence}
