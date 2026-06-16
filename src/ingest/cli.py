@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from typing import Any
@@ -10,7 +11,6 @@ from .graph import build_graph, thread_config
 
 
 def _parse_value(raw: str) -> Any:
-    # "3050.0" stays a float and '["a", "b"]' a list; anything else is a string.
     try:
         return json.loads(raw)
     except json.JSONDecodeError:
@@ -34,16 +34,70 @@ def _collect_overrides(payload: dict[str, Any]) -> dict[str, Any]:
     return overrides
 
 
+def _build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="slurp",
+        description="Extract structured data from a PDF using an agentic LangGraph pipeline.",
+    )
+    parser.add_argument("pdf", help="path to the PDF file to process")
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="print triage result, tier, and confidence to stderr",
+    )
+    parser.add_argument(
+        "--no-db",
+        action="store_true",
+        help="skip persisting the result to Postgres",
+    )
+    parser.add_argument(
+        "--thread-id",
+        metavar="ID",
+        default=None,
+        help="resume a paused human-review session by thread ID",
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        metavar="FILE",
+        default=None,
+        help="write JSON output to FILE instead of stdout",
+    )
+    return parser
+
+
 def main(argv: list[str] | None = None) -> int:
-    argv = sys.argv[1:] if argv is None else argv
-    if not argv:
-        print("usage: python -m ingest <pdf-path>", file=sys.stderr)
-        return 2
+    parser = _build_parser()
+    args = parser.parse_args(sys.argv[1:] if argv is None else argv)
+
     graph = build_graph()
-    config = thread_config()
-    state = graph.invoke({"path": argv[0]}, config)
+    config = thread_config(args.thread_id)
+
+    initial: dict[str, Any] = {"path": args.pdf}
+    if args.no_db:
+        initial["skip_db"] = True
+
+    state = graph.invoke(initial, config)
+
     while "__interrupt__" in state:
         overrides = _collect_overrides(state["__interrupt__"][0].value)
         state = graph.invoke(Command(resume={"overrides": overrides}), config)
-    print(json.dumps(state["result"], indent=2, ensure_ascii=False))
+
+    if args.verbose:
+        print(
+            f"[slurp] tier={state.get('tier')}  "
+            f"doc_type={state.get('doc_type')}  "
+            f"confidence={state.get('confidence', 0.0):.2f}",
+            file=sys.stderr,
+        )
+
+    result = json.dumps(state["result"], indent=2, ensure_ascii=False)
+
+    if args.output:
+        with open(args.output, "w", encoding="utf-8") as fh:
+            fh.write(result + "\n")
+    else:
+        print(result)
+
     return 0

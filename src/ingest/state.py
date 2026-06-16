@@ -11,4 +11,5 @@ class IngestState(TypedDict, total=False):
     fields: dict[str, Any]
     confidence: float
     needs_review: bool
+    skip_db: bool
     result: dict[str, Any]
