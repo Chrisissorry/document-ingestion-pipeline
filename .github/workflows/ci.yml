@@ -39,3 +39,35 @@ jobs:
         run: |
           uv run python -m ingest samples/sample_invoice.pdf
           uv run python -m ingest samples/sample_invoice_scan.pdf
+
+  db-integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ingest
+          POSTGRES_PASSWORD: ingest
+          POSTGRES_DB: ingest
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ingest -d ingest"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Sync dependencies
+        run: uv sync
+
+      - name: Pytest (db tests)
+        env:
+          DATABASE_URL: postgresql://ingest:ingest@localhost:5432/ingest
+        run: uv run pytest -m db -q
