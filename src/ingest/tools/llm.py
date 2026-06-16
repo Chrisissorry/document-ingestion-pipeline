@@ -10,6 +10,7 @@ from pydantic import BaseModel
 HAIKU_INPUT_PRICE = 1.00 / 1_000_000
 HAIKU_OUTPUT_PRICE = 5.00 / 1_000_000
 
+
 def model_name() -> str:
     return os.environ.get("ANTHROPIC_MODEL", "claude-haiku-4-5")
 
