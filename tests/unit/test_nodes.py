@@ -30,9 +30,54 @@ def test_ingest_text_layer_pdf_routes_to_text_tier() -> None:
 
 
 def test_ingest_scanned_pdf_falls_back_to_vision_tier() -> None:
+    # OCR is off by default, so a scan falls straight through to the Tier 2 stub.
     out = ingest({"path": SCAN_PDF})
     assert out["tier"] == "vision"
     assert out["raw_text"] == ""
+
+
+# --- ingest: Tier 1.5 OCR (#57) -------------------------------------------
+# OCR is gated by ocr_available(); these patch that gate so the suite never
+# depends on the Tesseract binary being installed.
+
+
+def test_ingest_uses_ocr_when_available(monkeypatch) -> None:
+    monkeypatch.setattr("ingest.nodes.ingest.ocr_available", lambda: True)
+    monkeypatch.setattr("ingest.nodes.ingest.ocr_first_page", lambda path: "scanned text")
+    out = ingest({"path": SCAN_PDF})
+    assert out["tier"] == "ocr"
+    assert out["raw_text"] == "scanned text"
+
+
+def test_ingest_falls_through_to_vision_when_ocr_unavailable(monkeypatch) -> None:
+    monkeypatch.setattr("ingest.nodes.ingest.ocr_available", lambda: False)
+    out = ingest({"path": SCAN_PDF})
+    assert out["tier"] == "vision"
+    assert out["raw_text"] == ""
+
+
+def test_ingest_falls_through_to_vision_when_ocr_yields_no_text(monkeypatch) -> None:
+    # OCR ran but produced nothing usable: do not claim the "ocr" tier on empty text.
+    monkeypatch.setattr("ingest.nodes.ingest.ocr_available", lambda: True)
+    monkeypatch.setattr("ingest.nodes.ingest.ocr_first_page", lambda path: "")
+    out = ingest({"path": SCAN_PDF})
+    assert out["tier"] == "vision"
+    assert out["raw_text"] == ""
+
+
+def test_ingest_text_layer_skips_ocr_even_when_available(monkeypatch) -> None:
+    # A PDF with a real text layer must never reach the OCR branch.
+    called = False
+
+    def _should_not_run() -> bool:
+        nonlocal called
+        called = True
+        return True
+
+    monkeypatch.setattr("ingest.nodes.ingest.ocr_available", _should_not_run)
+    out = ingest({"path": TEXT_PDF})
+    assert out["tier"] == "text"
+    assert called is False
 
 
 # --- triage ---------------------------------------------------------------
