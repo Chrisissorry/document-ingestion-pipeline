@@ -17,6 +17,12 @@ def _fake_response(text: str) -> MagicMock:
 @pytest.fixture
 def fake_llm(monkeypatch):
     mock_client = MagicMock()
-    mock_client.messages.create.return_value = _fake_response('{"doc_type": "invoice"}')
+    mock_client.messages.create.return_value = _fake_response(
+        '{"doc_type": "invoice", "invoice_number": "INV-2026-0042", '
+        '"date": "2026-05-28", "vendor": "ACME Supplies Ltd.", '
+        '"currency": "EUR", "total": 1222.80, '
+        '"line_items": [{"description": "Consulting services", "amount": 900.0}, '
+        '{"description": "Travel expenses", "amount": 119.0}]}'
+    )
     monkeypatch.setattr("ingest.tools.llm.client", lambda: mock_client, raising=False)
     return mock_client
