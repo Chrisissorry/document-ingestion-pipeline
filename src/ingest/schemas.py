@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Final
+
 from pydantic import BaseModel, Field
 
 
@@ -29,3 +31,10 @@ class GenericDocument(BaseModel):
     doc_type: str = "generic"
     title: str | None = None
     summary: str | None = None
+
+
+REQUIRED_FIELDS: Final[dict[str, list[str]]] = {
+    "invoice": ["invoice_number", "date", "vendor", "total"],
+    "contract": ["parties", "effective_date", "term"],
+    "generic": ["summary"],
+}
