@@ -27,7 +27,7 @@ def persist(state: IngestState) -> dict:
         "fields": state.get("fields", {}),
     }
     # source is the primary key; without it there is nothing to upsert against.
-    if record["source"]:
+    if record["source"] and not state.get("skip_db"):
         # A returned envelope is the contract; a missing DATABASE_URL (RuntimeError
         # from the DB helper, e.g. tokenless CI) or an unreachable DB must not crash
         # the pipeline (or the suite). The integration test verifies the write itself.
