@@ -1,19 +1,55 @@
 from __future__ import annotations
 
+import json
+import re
+
 from ..schemas import Contract, GenericDocument, Invoice
 from ..state import IngestState
+from ..tools import llm
 from ..tools.llm import extract_structured
 
 
+def _parse_llm_json(text: str) -> dict:
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        match = re.search(r"\{.*\}", text, re.DOTALL)
+        if match:
+            return json.loads(match.group())
+        return {}
+
+
 def extract_invoice(state: IngestState) -> dict:
-    inv = Invoice(
-        invoice_number="STUB-001",
-        date="2026-05-28",
-        vendor="ACME Supplies Ltd.",
-        currency="EUR",
-        total=1222.80,
+    raw_text = state.get("raw_text", "")
+    schema_json = json.dumps(Invoice.model_json_schema(), indent=2)
+
+    response = llm.client().messages.create(
+        model=llm.model_name(),
+        max_tokens=1024,
+        messages=[
+            {
+                "role": "user",
+                "content": (
+                    "Extract the invoice fields from the document below as a JSON object "
+                    f"matching this schema:\n{schema_json}\n\n"
+                    "Use null for absent fields. Reply with only the JSON object.\n\n"
+                    f"Document:\n{raw_text}"
+                ),
+            }
+        ],
     )
-    return {"fields": inv.model_dump(), "confidence": 0.91}
+
+    text_block = next(b for b in response.content if b.type == "text")
+    raw = _parse_llm_json(text_block.text)  # type: ignore[union-attr]
+    inv = Invoice.model_validate(raw)
+
+    scored_fields = ["invoice_number", "date", "vendor", "currency", "total"]
+    filled = sum(1 for f in scored_fields if getattr(inv, f) is not None)
+    if inv.line_items:
+        filled += 1
+    confidence = round(filled / (len(scored_fields) + 1), 2)
+
+    return {"fields": inv.model_dump(), "confidence": confidence}
 
 
 def extract_contract(state: IngestState) -> dict:

@@ -99,6 +99,58 @@ def test_validate_flags_missing_confidence() -> None:
     assert out["needs_review"] is True
 
 
+def test_validate_flags_invoice_with_missing_required_field() -> None:
+    fields = {
+        "doc_type": "invoice",
+        "invoice_number": None,
+        "date": None,
+        "vendor": None,
+        "total": None,
+    }
+    out = validate({"doc_type": "invoice", "confidence": 0.95, "fields": fields})
+    assert out["needs_review"] is True
+
+
+def test_validate_passes_invoice_with_all_required_fields() -> None:
+    fields = {
+        "doc_type": "invoice",
+        "invoice_number": "INV-001",
+        "date": "2026-06-11",
+        "vendor": "ACME",
+        "total": 100.0,
+    }
+    out = validate({"doc_type": "invoice", "confidence": 0.95, "fields": fields})
+    assert out["needs_review"] is False
+
+
+def test_validate_flags_contract_with_missing_required_field() -> None:
+    fields = {"doc_type": "contract", "parties": ["A", "B"], "effective_date": None, "term": None}
+    out = validate({"doc_type": "contract", "confidence": 0.95, "fields": fields})
+    assert out["needs_review"] is True
+
+
+def test_validate_flags_contract_with_empty_parties() -> None:
+    fields = {
+        "doc_type": "contract",
+        "parties": [],
+        "effective_date": "2026-07-01",
+        "term": "12 months",
+    }
+    out = validate({"doc_type": "contract", "confidence": 0.95, "fields": fields})
+    assert out["needs_review"] is True
+
+
+def test_validate_passes_contract_with_all_required_fields() -> None:
+    fields = {
+        "doc_type": "contract",
+        "parties": ["A", "B"],
+        "effective_date": "2026-07-01",
+        "term": "12 months",
+    }
+    out = validate({"doc_type": "contract", "confidence": 0.95, "fields": fields})
+    assert out["needs_review"] is False
+
+
 # --- human_review ---------------------------------------------------------
 # human_review pauses with interrupt(), which only works inside a compiled
 # graph with a checkpointer, so the unit tests wrap the node in a one-node graph.

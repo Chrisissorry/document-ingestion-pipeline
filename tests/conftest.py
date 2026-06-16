@@ -5,6 +5,15 @@ from unittest.mock import MagicMock
 import pytest
 
 
+def _fake_response(text: str) -> MagicMock:
+    block = MagicMock()
+    block.type = "text"
+    block.text = text
+    msg = MagicMock()
+    msg.content = [block]
+    return msg
+
+
 def _fake_tool_response(data: dict) -> MagicMock:
     block = MagicMock()
     block.type = "tool_use"
@@ -17,8 +26,12 @@ def _fake_tool_response(data: dict) -> MagicMock:
 @pytest.fixture
 def fake_llm(monkeypatch):
     mock_client = MagicMock()
-    mock_client.messages.create.return_value = _fake_tool_response(
-        {"doc_type": "generic", "title": "Test Document", "summary": "A short test summary."}
+    mock_client.messages.create.return_value = _fake_response(
+        '{"doc_type": "invoice", "invoice_number": "INV-2026-0042", '
+        '"date": "2026-05-28", "vendor": "ACME Supplies Ltd.", '
+        '"currency": "EUR", "total": 1222.80, '
+        '"line_items": [{"description": "Consulting services", "amount": 900.0}, '
+        '{"description": "Travel expenses", "amount": 119.0}]}'
     )
     monkeypatch.setattr("ingest.tools.llm.client", lambda: mock_client, raising=False)
     return mock_client
