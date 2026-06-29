@@ -28,7 +28,10 @@ dev = ["ruff>=0.4", "mypy>=1.10", "pytest>=8.0"]
 
 [tool.pytest.ini_options]
 addopts = "-m 'not eval'"
-markers = ["eval: real-model eval tests, requires ANTHROPIC_AUTH_TOKEN"]
+markers = [
+    "eval: real-model eval tests, requires ANTHROPIC_AUTH_TOKEN",
+    "db: tests that require a live Postgres (DATABASE_URL must be set)",
+]
 
 [tool.mypy]
 python_version = "3.12"

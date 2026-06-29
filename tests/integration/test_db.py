@@ -8,6 +8,8 @@ import pytest
 
 from ingest.db import connect, init_db
 
+pytestmark = pytest.mark.db
+
 
 def test_init_db_insert_and_query_back() -> None:
     # Runs by default (-m "not eval"); skips when there is no database to reach so

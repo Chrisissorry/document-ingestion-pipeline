@@ -9,6 +9,8 @@ import pytest
 from ingest.db import connect, init_db
 from ingest.nodes.persist import persist
 
+pytestmark = pytest.mark.db
+
 
 def _cleanup(source: str) -> None:
     with connect() as conn:
