@@ -16,6 +16,11 @@ dependencies = [
 [project.scripts]
 slurp = "ingest.cli:main"
 
+# Optional Tier 1.5 OCR (CLAUDE.md decision #1: bonus only, never on the critical path).
+# Needs the Tesseract binary too (see docs/ocr.md). Install with: uv sync --extra ocr
+[project.optional-dependencies]
+ocr = ["pytesseract>=0.3.10"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
