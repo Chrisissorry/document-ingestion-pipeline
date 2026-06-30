@@ -33,6 +33,60 @@ The hackathon (S7) and subsequent PRs produced a functional agentic pipeline:
 | Unit test suite | Done (35+ tests, all pass) |
 | Integration tests (DB, graph e2e, HITL) | Done — CI runs DB tests against a real Postgres service |
 
+## Sample output
+
+Captured with `slurp --no-db` against the included sample PDFs.
+
+### Invoice (`sample_invoice.pdf`)
+
+```json
+{
+  "source": "samples/sample_invoice.pdf",
+  "tier": "text",
+  "doc_type": "generic",
+  "confidence": 1.0,
+  "fields": {
+    "doc_type": "invoice",
+    "title": "ACME Supplies Ltd. Invoice",
+    "summary": "Invoice INV-2026-0042 dated 2026-05-28 from ACME Supplies Ltd. to Globex Corporation for consulting services (900.00 EUR) and travel expenses (119.00 EUR), with VAT of 203.80 EUR, totaling 1222.80 EUR."
+  }
+}
+```
+
+### Contract (`sample_contract.pdf`)
+
+```json
+{
+  "source": "samples/sample_contract.pdf",
+  "tier": "text",
+  "doc_type": "generic",
+  "confidence": 1.0,
+  "fields": {
+    "doc_type": "service_agreement",
+    "title": "SERVICE AGREEMENT",
+    "summary": "Service agreement between Initech LLC (Party A) and Globex Corporation (Party B), effective June 11, 2026, with a 12-month term that auto-renews. The agreement covers scope of services, fees and payment, and termination terms."
+  }
+}
+```
+
+### Scanned PDF (`sample_invoice_scan.pdf`)
+
+```json
+{
+  "source": "samples/sample_invoice_scan.pdf",
+  "tier": "vision",
+  "doc_type": "generic",
+  "confidence": 1.0,
+  "fields": {
+    "doc_type": "generic",
+    "title": "<UNKNOWN>",
+    "summary": "<UNKNOWN>"
+  }
+}
+```
+
+**Note on the output above:** all three documents are routed through the generic extractor, not the invoice or contract extractor. This is because the triage node is consistently returning `"generic"` for every input — see the triage bug below. The scan produces `<UNKNOWN>` fields because the vision tier is a stub and passes empty text to the extractor.
+
 ## What is incomplete
 
 ### Contract extractor (`nodes/extract.py`)
@@ -48,6 +102,14 @@ When pdfplumber finds no text and OCR is disabled (or Tesseract is absent), the 
 Tier 1.5 (OCR) now closes this gap when Tesseract is available. Tier 2 (Haiku Vision — render page to image, send to model) is still a TODO. `render_page_image()` already exists in `tools/pdf.py` as a shared helper; the Vision call itself is the missing piece.
 
 **Fix:** in `ingest.py`, after the OCR branch, call `render_page_image()`, encode the image, and send it to Haiku Vision to produce `raw_text`.
+
+### Triage node routes every document to generic
+
+Running all sample PDFs with a live API token shows every document classified as `"generic"` — the invoice extractor and contract extractor are never called. The triage node does make an LLM call (the same `llm.client()` used by the working generic extractor), but either the model is consistently returning `"generic"` despite the prompt, or the JSON parse of the response is silently failing and falling through to the `except Exception: return {"doc_type": "generic"}` fallback.
+
+This means the type-specific extractors (invoice and contract) are entirely bypassed in practice, and the routing conditional edges in the graph never fire for anything other than the generic branch.
+
+**Fix:** debug the triage call — add logging to distinguish between a model response of `"generic"` and a silent exception. Then either harden the prompt or fix the response parsing.
 
 ### Prompt injection hardening is inconsistent
 
@@ -67,7 +129,8 @@ Coverage gaps: Tier 2 Vision (not yet implemented), the contract extractor stub 
 
 ## Remaining work
 
-One mandatory gap and one optional one:
+In priority order:
 
-1. **Contract extractor** — single-node change, implement with `extract_structured`. Good candidate for a student issue.
-2. **Tier 2 Vision fallback** — call Haiku Vision when pdfplumber and OCR both yield no text. `render_page_image()` is already in `tools/pdf.py`; the Vision call is the only missing piece.
+1. **Triage bug** — every document is routed to the generic extractor. Must be diagnosed and fixed before the type-specific extractors are useful at all.
+2. **Contract extractor** — single-node change, implement with `extract_structured`. Only meaningful once triage correctly routes contract documents.
+3. **Tier 2 Vision fallback** — call Haiku Vision when pdfplumber and OCR both yield no text. `render_page_image()` is already in `tools/pdf.py`; the Vision API call is the only missing piece.
